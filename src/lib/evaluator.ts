@@ -44,7 +44,25 @@ export function evaluateResponse(params: {
   const { transcript, prompt, durationSeconds } = params;
   const seed = params.seed ?? transcript + prompt;
   const trimmed = transcript.trim();
-  const hasContent = trimmed.length > 0;
+  const hasContent = /[a-zA-Z]/.test(trimmed) && trimmed.split(/\s+/).filter(Boolean).length > 0;
+
+  if (!hasContent) {
+    const zeroCategories: Record<string, number> = {};
+    for (const cat of SCORE_CATEGORIES) zeroCategories[cat] = 0;
+    return {
+      categoryScores: zeroCategories,
+      overall: 0,
+      strengths: [],
+      weaknesses: ['No speech was detected, so this response could not be scored.'],
+      improvements: [
+        'Make sure your microphone is enabled and speak while the timer is running.',
+        'For accurate scoring, use Google Chrome or Microsoft Edge on a desktop.',
+      ],
+      sampleAnswer: generateSampleAnswer(prompt, 0),
+      feedback: 'No speech was detected for this response, so it was scored 0 out of 100.',
+    };
+  }
+
   const stats = textStats(trimmed || ' ');
   const fillerCount = countFillerWords(trimmed, FILLER_WORDS);
   const wpm = calculateWPM(trimmed, durationSeconds);
@@ -191,6 +209,9 @@ export function evaluateNotes(notes: string, keyPoints: string[]): {
   matched: string[];
 } {
   const lower = notes.toLowerCase();
+  if (!notes.trim()) {
+    return { score: 0, capturedCount: 0, totalCount: keyPoints.length, missing: [...keyPoints], matched: [] };
+  }
   const matched: string[] = [];
   const missing: string[] = [];
   for (const kp of keyPoints) {
