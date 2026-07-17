@@ -137,7 +137,7 @@ export function ConversationModule({ onComplete }: Props) {
     stopTracking();
     setPhase('feedback');
     const duration = recordingStart ? (Date.now() - recordingStart) / 1000 : 10;
-    const full = (transcript + ' ' + interim).trim() || 'I have experience working with customers and handling calls.';
+    const full = (transcript + ' ' + interim).trim();
     setMessages(prev => [...prev, { role: 'user', text: full }]);
 
     const feedback = generateCoachFeedback({

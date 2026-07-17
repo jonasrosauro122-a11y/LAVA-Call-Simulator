@@ -67,7 +67,7 @@ export function InsuranceModule({ onComplete }: Props) {
     recRef.current?.stop();
     setPhase('feedback');
     const duration = recordingStart ? (Date.now() - recordingStart) / 1000 : 15;
-    const full = (transcript + ' ' + interim).trim() || `${topic.topic} is a key part of your role. It involves understanding the details and communicating them clearly.`;
+    const full = (transcript + ' ' + interim).trim();
     const baseEval = evaluateResponse({ transcript: full, prompt: topic.prompt, durationSeconds: duration, seed: topic.id + full });
     const insuranceEval = evaluateInsuranceResponse(full, topic.keyTerms);
     const combined = { ...baseEval, overall: insuranceEval.score, termsUsed: insuranceEval.termsUsed, termsMissing: insuranceEval.termsMissing };

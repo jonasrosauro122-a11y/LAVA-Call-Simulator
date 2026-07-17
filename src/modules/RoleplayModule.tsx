@@ -17,6 +17,7 @@ import { useAssessment } from '../context/AssessmentContext';
 import { createRecognition, speak, speechSynthesisSupported, speechRecognitionSupported, stopSpeaking, countFillerWords, calculateWPM, type RecognitionHandle } from '../lib/speech';
 import { generateCoachFeedback, type CoachFeedback as CoachFeedbackData } from '../lib/coachEngine';
 import { getRandomPersonality, getVoiceParams, type Personality } from '../lib/personalityEngine';
+import { generateCustomerReply } from '../lib/roleplayEngine';
 import { analyzeEmotion, summarizeEmotions, type EmotionSnapshot } from '../lib/emotionEngine';
 import { getPositionByLabel } from '../lib/positionBank';
 import { useLiveAnalytics } from '../hooks/useLiveAnalytics';
@@ -34,30 +35,7 @@ interface ChatMessage {
 }
 
 const TOTAL_SCENARIOS = 4;
-
-const dynamicCustomerReplies = [
-  "Okay, I understand. Can you tell me what happens next?",
-  "That doesn't really solve my problem. Is there anything else you can do?",
-  "Hmm, alright. How long will that take?",
-  "I appreciate that. Can you confirm the details for me?",
-  "That's better. Thank you for your help.",
-  "Wait, I'm still confused about one thing. Can you clarify?",
-  "I'm not sure that works for me. What are my other options?",
-  "Okay, but what if that doesn't work? Then what?",
-];
-
-const emotionTransitions: Record<string, string[]> = {
-  angry: ['frustrated', 'angry', 'frustrated'],
-  frustrated: ['confused', 'frustrated', 'polite'],
-  confused: ['confused', 'polite', 'anxious'],
-  polite: ['polite', 'satisfied', 'polite'],
-  anxious: ['anxious', 'confused', 'polite'],
-  dismissive: ['dismissive', 'skeptical', 'interested'],
-  skeptical: ['skeptical', 'confused', 'interested'],
-  interested: ['interested', 'polite', 'satisfied'],
-  demanding: ['demanding', 'frustrated', 'polite'],
-  professional: ['professional', 'polite', 'satisfied'],
-};
+const MAX_FOLLOWUPS = 2; // up to 2 reactive follow-ups per scenario (ends early if resolved)
 
 const emotionConfig: Record<string, { icon: any; color: string; label: string }> = {
   angry: { icon: Frown, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', label: 'Angry' },
@@ -94,7 +72,6 @@ export function RoleplayModule({ onComplete }: Props) {
   const [personality, setPersonality] = useState<Personality>(() => getRandomPersonality('customer'));
   const [currentEmotion, setCurrentEmotion] = useState<string>('angry');
   const [phase, setPhase] = useState<'intro' | 'customer_speaking' | 'listening' | 'feedback' | 'customer_reply'>('intro');
-  const [transcript, setTranscript] = useState('');
   const [interim, setInterim] = useState('');
   const [recordingStart, setRecordingStart] = useState<number | null>(null);
   const [allFeedback, setAllFeedback] = useState<CoachFeedbackData[]>([]);
@@ -104,6 +81,9 @@ export function RoleplayModule({ onComplete }: Props) {
   const [turnCount, setTurnCount] = useState(0);
   const [, setScenarioScores] = useState<number[]>([]);
   const recRef = useRef<RecognitionHandle | null>(null);
+  const answerRef = useRef('');
+  const interimRef = useRef('');
+  const lastAnswerRef = useRef('');
   const supported = speechSynthesisSupported() && speechRecognitionSupported();
   const { analytics, startTracking, updateTranscript, stopTracking, reset } = useLiveAnalytics();
   const phaseRef = useRef(phase);
@@ -127,31 +107,30 @@ export function RoleplayModule({ onComplete }: Props) {
   };
 
   const startListening = () => {
-    setTranscript('');
     setInterim('');
+    answerRef.current = '';
+    interimRef.current = '';
     setPhase('listening');
     setRecordingStart(Date.now());
     reset();
     startTracking();
     if (!supported) {
-      setTimeout(() => {
-        setTranscript("I understand your concern. Let me look into your account and see what I can do to help resolve this for you.");
-        stopListening();
-      }, 4000);
+      // No speech recognition in this browser: we cannot capture a response,
+      // so it is scored honestly as no answer rather than fabricated.
+      setTimeout(() => { if (phaseRef.current === 'listening') stopListening(); }, 1500);
       return;
     }
     const rec = createRecognition({
       onResult: (text, isFinal) => {
         if (isFinal) {
-          setTranscript(prev => {
-            const updated = prev + ' ' + text;
-            updateTranscript(updated);
-            return updated;
-          });
+          answerRef.current = (answerRef.current + ' ' + text).trim();
+          interimRef.current = '';
+          updateTranscript(answerRef.current);
           setInterim('');
         } else {
+          interimRef.current = text;
           setInterim(text);
-          updateTranscript(text);
+          updateTranscript((answerRef.current + ' ' + text).trim());
         }
       },
       onEnd: () => { if (phaseRef.current === 'listening') stopListening(); },
@@ -166,7 +145,8 @@ export function RoleplayModule({ onComplete }: Props) {
     stopTracking();
     setPhase('feedback');
     const duration = recordingStart ? (Date.now() - recordingStart) / 1000 : 10;
-    const full = (transcript + ' ' + interim).trim() || "I understand your concern. Let me help you with that.";
+    const full = (answerRef.current + ' ' + interimRef.current).trim();
+    lastAnswerRef.current = full;
     setMessages(prev => [...prev, { role: 'agent', text: full }]);
 
     const feedback = generateCoachFeedback({
@@ -189,24 +169,34 @@ export function RoleplayModule({ onComplete }: Props) {
   const continueRoleplay = async () => {
     const newFeedback = coachFeedback ? [...allFeedback, coachFeedback] : allFeedback;
     setAllFeedback(newFeedback);
-    setScenarioScores(prev => [...prev, coachFeedback?.overall ?? 70]);
-    setTurnCount(turnCount + 1);
+    setScenarioScores(prev => [...prev, coachFeedback?.overall ?? 0]);
+    const currentTurn = turnCount;
+    setTurnCount(currentTurn + 1);
 
-    if (turnCount < 1) {
-      // Dynamic customer reply with emotion transition
-      const reply = dynamicCustomerReplies[scenarioIdx % dynamicCustomerReplies.length];
-      const transitions = emotionTransitions[currentEmotion] ?? ['polite'];
-      const newEmotion = transitions[turnCount % transitions.length];
-      setCurrentEmotion(newEmotion);
+    const isFinalTurn = currentTurn + 1 >= MAX_FOLLOWUPS;
+    // The customer reacts to what the VA actually said this turn.
+    const reply = generateCustomerReply({
+      vaResponse: lastAnswerRef.current,
+      currentEmotion,
+      scenarioContext: scenario?.context,
+      scenarioEmotion: scenario?.emotion,
+      positionCategory: position?.category,
+      turn: currentTurn,
+      isFinalTurn,
+    });
+    setCurrentEmotion(reply.emotion);
 
-      setPhase('customer_reply');
-      setMessages(prev => [...prev, { role: 'customer', text: reply, emotion: newEmotion, personalityName: personality.name }]);
-      const voiceParams = getVoiceParams(personality);
-      await speak(reply, { rate: voiceParams.rate, pitch: voiceParams.pitch });
+    setPhase('customer_reply');
+    setMessages(prev => [...prev, { role: 'customer', text: reply.text, emotion: reply.emotion, personalityName: personality.name }]);
+    const voiceParams = getVoiceParams(personality);
+    await speak(reply.text, { rate: voiceParams.rate, pitch: voiceParams.pitch });
+
+    if (reply.resolved || currentTurn + 1 >= MAX_FOLLOWUPS) {
+      // Customer is satisfied, or we've reached the max exchanges — wrap up.
+      finishScenario(newFeedback);
+    } else {
       setCoachFeedback(null);
       startListening();
-    } else {
-      finishScenario(newFeedback);
     }
   };
 
@@ -215,7 +205,6 @@ export function RoleplayModule({ onComplete }: Props) {
     if (scenarioIdx + 1 < TOTAL_SCENARIOS) {
       setScenarioIdx(scenarioIdx + 1);
       setPhase('intro');
-      setTranscript('');
       setInterim('');
       setCoachFeedback(null);
       setMessages([]);

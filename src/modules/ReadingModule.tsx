@@ -67,7 +67,7 @@ export function ReadingModule({ onComplete }: Props) {
     recRef.current?.stop();
     setPhase('feedback');
     const duration = recordingStart ? (Date.now() - recordingStart) / 1000 : 10;
-    const full = (transcript + ' ' + interim).trim() || para.text;
+    const full = (transcript + ' ' + interim).trim();
     const evalResult = evaluateResponse({ transcript: full, prompt: para.text, durationSeconds: duration, seed: para.id + full });
     (evalResult as any).wpm = calculateWPM(full, duration);
     (evalResult as any).pace = estimateSpeakingPace(full, duration);

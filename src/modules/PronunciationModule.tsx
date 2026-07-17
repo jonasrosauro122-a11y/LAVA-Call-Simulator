@@ -67,7 +67,7 @@ export function PronunciationModule({ onComplete }: Props) {
     recRef.current?.stop();
     setPhase('feedback');
     const duration = recordingStart ? (Date.now() - recordingStart) / 1000 : 5;
-    const fullTranscript = (transcript + ' ' + interim).trim() || sentence.text;
+    const fullTranscript = (transcript + ' ' + interim).trim();
     const evalResult = evaluateResponse({
       transcript: fullTranscript,
       prompt: sentence.text,
@@ -186,7 +186,7 @@ export function PronunciationModule({ onComplete }: Props) {
                 >
                   <div className="rounded-xl bg-ink-50 dark:bg-ink-800/50 p-4">
                     <p className="text-xs text-ink-500 dark:text-ink-400 mb-1">Your transcript:</p>
-                    <p className="text-sm text-ink-800 dark:text-ink-100 italic">"{transcript || sentence.text}"</p>
+                    <p className="text-sm text-ink-800 dark:text-ink-100 italic">{transcript.trim() ? `"${transcript.trim()}"` : 'No speech detected.'}</p>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
