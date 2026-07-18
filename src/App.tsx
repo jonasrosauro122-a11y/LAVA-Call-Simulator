@@ -2,6 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AssessmentProvider, useAssessment } from './context/AssessmentContext';
+import { LearningProvider } from './learning/context/LearningContext';
+import { GamificationProvider } from './learning/context/GamificationContext';
+import { AnalysisProvider } from './learning/context/AnalysisContext';
+import { ScenarioProvider } from './learning/context/ScenarioContext';
+import { XpToastHost } from './learning/components/XpToastHost';
+import { LevelUpModal } from './learning/components/LevelUpModal';
 
 // Route-level code splitting: each page loads on demand instead of shipping one large bundle.
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
@@ -12,6 +18,20 @@ const CertificatePage = lazy(() => import('./pages/CertificatePage').then(m => (
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
 const PracticePage = lazy(() => import('./pages/PracticePage').then(m => ({ default: m.PracticePage })));
+
+// Learning Journey (additive layer)
+const LearningDashboardPage = lazy(() => import('./learning/pages/LearningDashboardPage').then(m => ({ default: m.LearningDashboardPage })));
+const PathsCatalogPage = lazy(() => import('./learning/pages/PathsCatalogPage').then(m => ({ default: m.PathsCatalogPage })));
+const PathOverviewPage = lazy(() => import('./learning/pages/PathOverviewPage').then(m => ({ default: m.PathOverviewPage })));
+const ModuleDetailPage = lazy(() => import('./learning/pages/ModuleDetailPage').then(m => ({ default: m.ModuleDetailPage })));
+const TrophyRoomPage = lazy(() => import('./learning/pages/TrophyRoomPage').then(m => ({ default: m.TrophyRoomPage })));
+const LearningLeaderboardPage = lazy(() => import('./learning/pages/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const ProfilePage = lazy(() => import('./learning/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AnalyticsPage = lazy(() => import('./learning/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
+const SimulationAnalysisPage = lazy(() => import('./learning/pages/SimulationAnalysisPage').then(m => ({ default: m.SimulationAnalysisPage })));
+const ScenarioPreviewPage = lazy(() => import('./learning/pages/ScenarioPreviewPage').then(m => ({ default: m.ScenarioPreviewPage })));
+const ScenarioHistoryPage = lazy(() => import('./learning/pages/ScenarioHistoryPage').then(m => ({ default: m.ScenarioHistoryPage })));
+const AISettingsPage = lazy(() => import('./learning/pages/AISettingsPage').then(m => ({ default: m.AISettingsPage })));
 
 function RouteFallback() {
   return (
@@ -51,6 +71,21 @@ function AppRoutes() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/practice" element={<PracticePage />} />
+
+        {/* Learning Journey (additive) — gated the same way as other candidate routes */}
+        <Route path="/learning" element={assessment ? <LearningDashboardPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/paths" element={assessment ? <PathsCatalogPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/path/:pathId" element={assessment ? <PathOverviewPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/module/:moduleId" element={assessment ? <ModuleDetailPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/trophies" element={assessment ? <TrophyRoomPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/leaderboard" element={assessment ? <LearningLeaderboardPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/profile" element={assessment ? <ProfilePage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/analytics" element={assessment ? <AnalyticsPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/simulation/:id" element={assessment ? <SimulationAnalysisPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/scenarios" element={assessment ? <ScenarioHistoryPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/scenario/:pathId/:moduleId" element={assessment ? <ScenarioPreviewPage /> : <Navigate to="/" replace />} />
+        <Route path="/learning/ai-settings" element={assessment ? <AISettingsPage /> : <Navigate to="/" replace />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
@@ -61,10 +96,20 @@ export default function App() {
   return (
     <ThemeProvider>
       <AssessmentProvider>
-        <BrowserRouter>
-          <SessionRestore />
-          <AppRoutes />
-        </BrowserRouter>
+        <LearningProvider>
+          <GamificationProvider>
+            <AnalysisProvider>
+              <ScenarioProvider>
+                <BrowserRouter>
+                  <SessionRestore />
+                  <AppRoutes />
+                </BrowserRouter>
+                <XpToastHost />
+                <LevelUpModal />
+              </ScenarioProvider>
+            </AnalysisProvider>
+          </GamificationProvider>
+        </LearningProvider>
       </AssessmentProvider>
     </ThemeProvider>
   );
