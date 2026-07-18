@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Headphones, Mic, BookOpen, MessageCircle, Headset, PenLine, ShieldCheck,
-  ArrowRight, Clock, TrendingUp, Award, LogOut, Moon, Sun, Trophy, CheckCircle2, Circle, AlertCircle,
+  ArrowRight, Clock, TrendingUp, Award, LogOut, Moon, Sun, Trophy, CheckCircle2, Circle, AlertCircle, GraduationCap,
 } from 'lucide-react';
 import { Logo } from '../components/ui/Logo';
 import { Button } from '../components/ui/Button';
@@ -14,6 +14,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAssessment } from '../context/AssessmentContext';
 import { MODULES, type Badge } from '../types';
 import { supabase } from '../lib/supabase';
+import { LearningSummary } from '../learning/components/LearningSummary';
 
 const moduleIcons: Record<string, any> = {
   Headphones, Mic, BookOpen, MessageCircle, Headset, PenLine, ShieldCheck,
@@ -56,6 +57,7 @@ export function DashboardPage() {
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/learning')} className="btn-ghost text-sm"><GraduationCap size={16} /> Learning</button>
             <button onClick={() => navigate('/leaderboard')} className="btn-ghost text-sm"><Trophy size={16} /> Leaderboard</button>
             <button onClick={toggleTheme} className="btn-ghost" aria-label="Toggle theme">
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
@@ -117,6 +119,9 @@ export function DashboardPage() {
             </Card>
           ))}
         </div>
+
+        {/* Learning Journey summary (additive layer) */}
+        <LearningSummary />
 
         {/* Current module CTA */}
         {assessment.status !== 'completed' && (
