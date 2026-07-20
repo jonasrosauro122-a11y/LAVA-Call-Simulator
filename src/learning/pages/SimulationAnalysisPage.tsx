@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Activity, Clock, MessageSquareText, Radar as RadarIcon, ListChecks, Sparkles } from 'lucide-react';
+import { Activity, Clock, MessageSquareText, Radar as RadarIcon, ListChecks, Sparkles, Mic } from 'lucide-react';
 import { LearningHeader } from '../components/LearningHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -63,6 +63,9 @@ export function SimulationAnalysisPage() {
               <span>{new Date(a.timestamp).toLocaleString()}</span>
               {a.pathTitle && <span>{a.pathTitle}</span>}
             </div>
+            <button onClick={() => navigate(`/learning/voice/${a.id}`)} className="btn-ghost text-sm mt-3 !px-0 text-lava-700 dark:text-lava-400">
+              <Mic size={15} /> Open voice replay
+            </button>
           </div>
           <div className="flex items-center gap-5">
             <ProgressRing value={a.overallScore} size={104} label={`${a.overallScore}`} sublabel="Overall" />
