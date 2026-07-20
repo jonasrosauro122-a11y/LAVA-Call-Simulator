@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Flame, Award, Trophy, Star, Zap, Mic, Activity, GraduationCap, StickyNote, MessageSquarePlus, CheckCircle2, Circle,
+  Flame, Award, Trophy, Star, Zap, Mic, Activity, GraduationCap, StickyNote, MessageSquarePlus, CheckCircle2, Circle, Disc3,
 } from 'lucide-react';
 import { ManagementHeader, PermissionGate, StatCard, InitialsAvatar, RiskBadge, ProgressBar } from '../components/ManagementComponents';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { SkillRadar } from '../../learning/analysis/components/SkillRadar';
+import { RecordingLibrary } from '../../learning/recording/components/RecordingLibrary';
 import { useManagement } from '../context/ManagementContext';
 import type { RadarAxis } from '../../learning/analysis/types';
 import type { TrainerFeedback } from '../types';
@@ -16,7 +17,7 @@ import type { TrainerFeedback } from '../types';
 export function LearnerProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getLearner, notesByLearner, addNote, feedbackByLearner, addFeedback, trainerId, can } = useManagement();
+  const { getLearner, notesByLearner, addNote, feedbackByLearner, addFeedback, trainerId, can, role } = useManagement();
   const learner = id ? getLearner(id) : undefined;
 
   const [noteText, setNoteText] = useState('');
@@ -169,6 +170,12 @@ export function LearnerProfilePage() {
               </div>
             </Card>
           )}
+
+          {/* Recording library (voice recordings for this learner) */}
+          <Card className="p-6">
+            <h2 className="font-display text-lg font-bold text-ink-800 dark:text-ink-100 mb-4 flex items-center gap-2"><Disc3 size={18} className="text-lava-600" /> Recording Library</h2>
+            <RecordingLibrary learnerId={learner.id} viewerRole={role} viewerLearnerId="me" canDelete={can('manage_learners')} />
+          </Card>
 
           {/* Trainer notes */}
           <Card className="p-6">
