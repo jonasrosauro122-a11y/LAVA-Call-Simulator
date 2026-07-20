@@ -58,6 +58,7 @@ export function DashboardPage() {
           <Logo size="sm" />
           <div className="flex items-center gap-2">
             <button onClick={() => navigate('/learning')} className="btn-ghost text-sm"><GraduationCap size={16} /> Learning</button>
+            <button onClick={() => navigate('/trainer')} className="btn-ghost text-sm" title="Trainer Console"><ShieldCheck size={16} /> <span className="hidden sm:inline">Trainer</span></button>
             <button onClick={() => navigate('/leaderboard')} className="btn-ghost text-sm"><Trophy size={16} /> Leaderboard</button>
             <button onClick={toggleTheme} className="btn-ghost" aria-label="Toggle theme">
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
