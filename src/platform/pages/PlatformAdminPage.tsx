@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Radio, ScrollText, Flag, SlidersHorizontal, Puzzle, ListChecks,
-  CalendarClock, Webhook as WebhookIcon, Plug, Palette, Send, Play, Rocket,
+  CalendarClock, Webhook as WebhookIcon, Plug, Palette, Send, Play, Rocket, Disc3,
 } from 'lucide-react';
+import { RecordingsAdmin } from '../../learning/recording/components/RecordingLibrary';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { PermissionGate, DataTable, StatCard } from '../../enterprise/components/ManagementComponents';
 import { usePlatform } from '../context/PlatformContext';
 
-type Tab = 'overview' | 'events' | 'audit' | 'flags' | 'config' | 'plugins' | 'jobs' | 'scheduler' | 'webhooks' | 'integrations' | 'branding';
+type Tab = 'overview' | 'events' | 'audit' | 'flags' | 'config' | 'plugins' | 'jobs' | 'scheduler' | 'webhooks' | 'integrations' | 'branding' | 'recordings';
 
 const TABS: { id: Tab; label: string; icon: typeof Radio }[] = [
   { id: 'overview', label: 'Overview', icon: SlidersHorizontal },
@@ -24,6 +25,7 @@ const TABS: { id: Tab; label: string; icon: typeof Radio }[] = [
   { id: 'webhooks', label: 'Webhooks', icon: WebhookIcon },
   { id: 'integrations', label: 'Integrations', icon: Plug },
   { id: 'branding', label: 'Branding', icon: Palette },
+  { id: 'recordings', label: 'Recordings', icon: Disc3 },
 ];
 
 const SEV_COLOR: Record<string, string> = { info: '#6b7280', notice: '#2563eb', warning: '#f59e0b', critical: '#b71c1c' };
@@ -206,6 +208,8 @@ export function PlatformAdminPage() {
               ); })()}
             </Card>
           )}
+
+          {tab === 'recordings' && <RecordingsAdmin />}
         </main>
       </div>
     </PermissionGate>
