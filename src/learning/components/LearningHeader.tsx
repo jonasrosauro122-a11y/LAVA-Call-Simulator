@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Moon, Sun, LayoutDashboard, BookOpen, ArrowLeft, Trophy, BarChart3, User, Activity, Wand2 } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, BookOpen, ArrowLeft, Trophy, BarChart3, User, Activity, Wand2, Mic } from 'lucide-react';
 import { Logo } from '../../components/ui/Logo';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -36,6 +36,9 @@ export function LearningHeader({ back }: LearningHeaderProps) {
           </button>
           <button onClick={() => navigate('/learning/scenarios')} className="btn-ghost text-sm" aria-label="Scenarios">
             <Wand2 size={16} /> <span className="hidden md:inline">Scenarios</span>
+          </button>
+          <button onClick={() => navigate('/learning/voice')} className="btn-ghost text-sm" aria-label="Voice">
+            <Mic size={16} /> <span className="hidden md:inline">Voice</span>
           </button>
           <button onClick={() => navigate('/learning/trophies')} className="btn-ghost text-sm" aria-label="Trophy room">
             <Trophy size={16} /> <span className="hidden md:inline">Trophies</span>
